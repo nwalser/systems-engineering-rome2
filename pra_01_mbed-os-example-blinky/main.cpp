@@ -45,6 +45,7 @@ int main()
 {    
     // distance sensors
     enable = 1;
+    enableMotorDriver = 1;
 
     // motor driver
     pwmLeft.period(0.00005);
@@ -52,45 +53,31 @@ int main()
     pwmLeft = 0.5;
     pwmRight = 0.5; 
 
-    
-    Timer timer = Timer();
-    bool state = 0;
-    timer.start();
+
+    float t = 0;
 
     while(true){
-        printf("distance: ");
+        IRSensor sensorLeft = irSensor2;
+        IRSensor sensorCenter = irSensor3;
+        IRSensor sensorRight = irSensor4;
 
-        if(timer.elapsed_time() > 500ms){
-            state = !state;
-            timer.reset();
+        led2 = irSensor2.read() < 0.2;
+        led3 = irSensor3.read() < 0.2;
+        led4 = irSensor4.read() < 0.2;
+
+
+        if(sensorLeft.read() < 0.3 || sensorCenter.read() < 0.3){
+            controller.setRotationalVelocity(-1.5);
+        }
+        else if(sensorRight.read() < 0.3){
+            controller.setRotationalVelocity(1.5);
+        }
+        else {
+            controller.setRotationalVelocity(0);
+            controller.setTranslationalVelocity(0.1);
         }
 
-        for(int i = 0; i < NUM_SENSORS; i++){
-            float distance = irSensors[i].read();
-
-            leds[i] = (distance < ACTIVATION_DISTANCE) & state;
-            
-            printf("%05d ", (int)(1000.0f*distance));
-        }
-
-        printf("[mm] \r\n");
-
-
-        enableMotorDriver = 1;
-        controller.setDesiredSpeedLeft(50.0);
-        controller.setDesiredSpeedRight(-50.0);
-
-        //printf("actual speed (left/right): %.3f / %.3f [rpm]\r\n", controller.getActualSpeedLeft(), controller.getActualSpeedRight());
-   
-        // angle_velocity
-        // velocity
-
-        // R = 150mm
-
-        // vr = R * angle_velocity + velocity
-        // vl = R * -angle_velocity + velocity
-
-        // velocity =  (vl + vr) / 2
-        // angle_velocity = 1 / (2*R) * (vr-vl)
+        //t += 0.010;
+        ThisThread::sleep_for(10ms);
     }
 }
